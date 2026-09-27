@@ -1,0 +1,2807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Smart Anti Sleep Box</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+body{
+    font-family:Arial,Helvetica,sans-serif;
+    background:#06111f;
+    color:#fff;
+    min-height:100vh;
+    transition:background .3s;
+}
+
+header{
+    background:#0b1b2c;
+    border-bottom:1px solid #27435d;
+    padding:16px 5%;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.logo{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.logoIcon{
+    font-size:28px;
+}
+
+.logo h1{
+    font-size:21px;
+}
+
+.logo p{
+    color:#8da4ba;
+    font-size:12px;
+    margin-top:4px;
+}
+
+.systemBadge{
+    padding:9px 15px;
+    border-radius:20px;
+    background:#26374a;
+    color:#b6c6d5;
+    font-size:12px;
+    font-weight:bold;
+}
+
+.systemBadge.active{
+    background:#073e30;
+    color:#4ff0ae;
+}
+
+.container{
+    width:92%;
+    max-width:1200px;
+    margin:auto;
+    padding:25px 0 35px;
+}
+
+.hero{
+    background:linear-gradient(135deg,#112d48,#0c1d30);
+    border:1px solid #284761;
+    border-radius:18px;
+    padding:28px;
+    margin-bottom:18px;
+}
+
+.heroLabel{
+    color:#4bd7ff;
+    font-size:11px;
+    font-weight:bold;
+    letter-spacing:1.5px;
+}
+
+.hero h2{
+    font-size:37px;
+    margin:9px 0;
+}
+
+.hero p{
+    color:#91a8bd;
+    max-width:760px;
+    line-height:1.55;
+    font-size:14px;
+}
+
+.buttons{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:20px;
+}
+
+button{
+    border:0;
+    padding:12px 18px;
+    border-radius:9px;
+    cursor:pointer;
+    font-weight:bold;
+    font-size:13px;
+}
+
+button:disabled{
+    opacity:.45;
+    cursor:not-allowed;
+}
+
+.start{
+    background:#43e1a5;
+    color:#03140d;
+}
+
+.stop{
+    background:#34485e;
+    color:white;
+}
+
+.test{
+    background:#162b41;
+    border:1px solid #3d5d77;
+    color:#fff;
+}
+
+.alert{
+    display:none;
+    padding:15px;
+    border-radius:12px;
+    margin-bottom:18px;
+    text-align:center;
+    font-weight:bold;
+}
+
+.warningAlert{
+    display:block;
+    background:#49370c;
+    border:1px solid #8b681b;
+    color:#ffd477;
+}
+
+.criticalAlert{
+    display:block;
+    background:#591019;
+    border:1px solid #b52f3d;
+    color:#ffb6bd;
+    animation:pulse .6s infinite alternate;
+}
+
+@keyframes pulse{
+    from{opacity:.7}
+    to{opacity:1}
+}
+
+.dashboard{
+    display:grid;
+    grid-template-columns:1.3fr .8fr;
+    gap:18px;
+}
+
+.card{
+    background:#0c1c2d;
+    border:1px solid #284760;
+    border-radius:18px;
+    padding:18px;
+}
+
+.titleRow{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+}
+
+.titleRow h3{
+    font-size:16px;
+}
+
+.pill{
+    padding:7px 11px;
+    border-radius:20px;
+    background:#27384a;
+    color:#aebfce;
+    font-size:10px;
+    font-weight:bold;
+}
+
+.pill.green{
+    background:#073f30;
+    color:#4ff0ae;
+}
+
+.pill.yellow{
+    background:#49370c;
+    color:#ffd477;
+}
+
+.pill.red{
+    background:#591019;
+    color:#ffb6bd;
+}
+
+.camera{
+    width:100%;
+    aspect-ratio:16/10;
+    background:#02070c;
+    border-radius:13px;
+    overflow:hidden;
+    position:relative;
+    border:1px solid #2a506d;
+}
+
+video{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    transform:scaleX(-1);
+}
+
+#canvas{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    transform:scaleX(-1);
+    pointer-events:none;
+}
+
+.cameraMessage{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    background:rgba(0,0,0,.45);
+    color:#91a8bd;
+}
+
+.cameraMessage .bigIcon{
+    font-size:42px;
+    margin-bottom:8px;
+}
+
+.cameraMessage span{
+    margin-top:5px;
+    font-size:12px;
+}
+
+.hidden{
+    display:none !important;
+}
+
+.cameraInfo{
+    display:flex;
+    justify-content:space-between;
+    margin-top:10px;
+    color:#7f98ae;
+    font-size:11px;
+}
+
+.cameraInfo b{
+    color:#fff;
+}
+
+.driverStatus{
+    padding:10px 0 18px;
+    color:#4ce3a5;
+    font-size:26px;
+    font-weight:bold;
+}
+
+.driverStatus.warning{
+    color:#ffbd4c;
+}
+
+.driverStatus.critical{
+    color:#ff5c68;
+    animation:pulse .6s infinite alternate;
+}
+
+.driverDot{
+    display:inline-block;
+    width:11px;
+    height:11px;
+    border-radius:50%;
+    background:currentColor;
+    box-shadow:0 0 12px currentColor;
+    margin-right:7px;
+}
+
+.eyeDisplay{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:18px;
+}
+
+.eyeBox{
+    background:#10253a;
+    border:1px solid #274963;
+    border-radius:12px;
+    padding:15px;
+    text-align:center;
+}
+
+.eyeIcon{
+    font-size:35px;
+    margin-bottom:6px;
+}
+
+.eyeBox strong{
+    display:block;
+    font-size:13px;
+}
+
+.eyeBox small{
+    display:block;
+    color:#819ab0;
+    font-size:10px;
+    margin-top:4px;
+}
+
+.eyeBox.open{
+    border-color:#258b67;
+    background:#092b25;
+}
+
+.eyeBox.open strong{
+    color:#4ff0ae;
+}
+
+.eyeBox.closed{
+    border-color:#b43843;
+    background:#391219;
+    animation:eyePulse .5s infinite alternate;
+}
+
+.eyeBox.closed strong{
+    color:#ff707a;
+}
+
+@keyframes eyePulse{
+    from{transform:scale(1)}
+    to{transform:scale(1.02)}
+}
+
+.mainTimer{
+    text-align:center;
+    background:#0a1726;
+    border-radius:12px;
+    padding:14px;
+    margin-bottom:15px;
+}
+
+.mainTimer small{
+    color:#8098ad;
+    font-size:10px;
+}
+
+.mainTimer strong{
+    display:block;
+    font-size:31px;
+    margin-top:5px;
+}
+
+.metricGrid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:9px;
+}
+
+.metric{
+    background:#10243a;
+    border-radius:10px;
+    padding:12px;
+}
+
+.metric span{
+    display:block;
+    color:#8198ae;
+    font-size:10px;
+    margin-bottom:5px;
+}
+
+.metric strong{
+    font-size:13px;
+}
+
+.meterHeader{
+    display:flex;
+    justify-content:space-between;
+    color:#8ca3b7;
+    font-size:11px;
+    margin-top:18px;
+    margin-bottom:7px;
+}
+
+.meter{
+    height:11px;
+    background:#1b2e42;
+    border-radius:20px;
+    overflow:hidden;
+}
+
+.meterFill{
+    width:0%;
+    height:100%;
+    background:#43e1a5;
+    transition:.2s;
+}
+
+.warningBox,
+.criticalBox{
+    margin-top:15px;
+    padding:14px;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    gap:11px;
+}
+
+.warningBox{
+    background:#3c2d0d;
+    border:1px solid #80601a;
+    color:#ffd477;
+}
+
+.criticalBox{
+    background:#4d1119;
+    border:1px solid #a72d3b;
+    color:#ffb5bc;
+    animation:pulse .6s infinite alternate;
+}
+
+.how{
+    margin-top:18px;
+}
+
+.steps{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:9px;
+}
+
+.step{
+    background:#10243a;
+    border-radius:10px;
+    padding:13px;
+    color:#93aabd;
+    font-size:11px;
+    line-height:1.45;
+}
+
+.stepNumber{
+    width:25px;
+    height:25px;
+    border-radius:50%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:#173c59;
+    color:#55d8ff;
+    font-weight:bold;
+    margin-bottom:7px;
+}
+
+.error{
+    display:none;
+    background:#4c1119;
+    border:1px solid #a72d3b;
+    color:#ffb5bc;
+    padding:14px;
+    border-radius:10px;
+    margin-top:18px;
+}
+
+footer{
+    text-align:center;
+    color:#5f7890;
+    font-size:11px;
+    padding:20px;
+}
+
+@media(max-width:900px){
+
+    .dashboard{
+        grid-template-columns:1fr;
+    }
+
+    .steps{
+        grid-template-columns:1fr 1fr;
+    }
+}
+
+@media(max-width:600px){
+
+    header{
+        padding:14px 4%;
+    }
+
+    .logo h1{
+        font-size:18px;
+    }
+
+    .logo p{
+        font-size:10px;
+    }
+
+    .hero{
+        padding:20px;
+    }
+
+    .hero h2{
+        font-size:29px;
+    }
+
+    .buttons{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+    }
+
+    .test{
+        grid-column:1/-1;
+    }
+
+    button{
+        width:100%;
+    }
+
+    .steps{
+        grid-template-columns:1fr;
+    }
+
+    .driverStatus{
+        font-size:22px;
+    }
+}
+
+</style>
+</head>
+
+
+<body>
+
+
+<header>
+
+<div class="logo">
+
+<div class="logoIcon">🚗</div>
+
+<div>
+<h1>Smart Anti Sleep Box</h1>
+<p>Driver Drowsiness Detection & Alert System</p>
+</div>
+
+</div>
+
+<div id="systemStatus" class="systemBadge">
+● OFF
+</div>
+
+</header>
+
+
+<div class="container">
+
+
+<section class="hero">
+
+<div class="heroLabel">
+DRIVER SAFETY MONITOR
+</div>
+
+<h2>Stay Awake. Stay Safe.</h2>
+
+<p>
+The camera monitors the driver's eyes locally. If both eyes stay closed,
+the system automatically gives a warning and activates a loud alert when
+the closure continues.
+</p>
+
+<div class="buttons">
+
+<button id="startBtn" class="start">
+▶ START DETECTION
+</button>
+
+<button id="stopBtn" class="stop" disabled>
+■ STOP
+</button>
+
+<button id="testBtn" class="test">
+⚡ TEST ALERT
+</button>
+
+</div>
+
+</section>
+
+
+<div id="globalAlert" class="alert"></div>
+
+
+<section class="dashboard">
+
+
+<!-- CAMERA -->
+
+<div class="card">
+
+<div class="titleRow">
+
+<h3>📷 Live Camera</h3>
+
+<span id="cameraPill" class="pill">
+OFF
+</span>
+
+</div>
+
+
+<div class="camera">
+
+<video id="video" autoplay muted playsinline></video>
+
+<canvas id="canvas"></canvas>
+
+<div id="cameraMessage" class="cameraMessage">
+
+<div class="bigIcon">📷</div>
+
+<strong>Camera is OFF</strong>
+
+<span>Press START DETECTION</span>
+
+</div>
+
+</div>
+
+
+<div class="cameraInfo">
+
+<span>
+Face:
+<b id="faceStatus">NOT DETECTED</b>
+</span>
+
+<span>
+Detection:
+<b id="processingStatus">READY</b>
+</span>
+
+</div>
+
+</div>
+
+
+
+<!-- DRIVER -->
+
+<div class="card">
+
+<div class="titleRow">
+
+<h3>Driver Status</h3>
+
+<span id="alarmPill" class="pill">
+ALARM OFF
+</span>
+
+</div>
+
+
+<div id="driverStatus" class="driverStatus">
+
+<span class="driverDot"></span>
+
+<span id="driverText">
+DRIVER ALERT
+</span>
+
+</div>
+
+
+<!-- BIG EYE INDICATORS -->
+
+<div class="eyeDisplay">
+
+<div id="leftEyeBox" class="eyeBox">
+
+<div id="leftEyeIcon" class="eyeIcon">
+👁️
+</div>
+
+<strong id="leftEyeText">
+OPEN
+</strong>
+
+<small>LEFT EYE</small>
+
+</div>
+
+
+<div id="rightEyeBox" class="eyeBox">
+
+<div id="rightEyeIcon" class="eyeIcon">
+👁️
+</div>
+
+<strong id="rightEyeText">
+OPEN
+</strong>
+
+<small>RIGHT EYE</small>
+
+</div>
+
+</div>
+
+
+<div class="mainTimer">
+
+<small>EYES CONTINUOUSLY CLOSED</small>
+
+<strong id="closedTime">
+0.0 sec
+</strong>
+
+</div>
+
+
+<div class="metricGrid">
+
+<div class="metric">
+
+<span>CAMERA</span>
+
+<strong id="cameraStat">
+OFF
+</strong>
+
+</div>
+
+
+<div class="metric">
+
+<span>FACE</span>
+
+<strong id="faceStat">
+NOT DETECTED
+</strong>
+
+</div>
+
+
+<div class="metric">
+
+<span>EYE STATUS</span>
+
+<strong id="eyeStat">
+—
+</strong>
+
+</div>
+
+
+<div class="metric">
+
+<span>ALARM</span>
+
+<strong id="alarmStat">
+OFF
+</strong>
+
+</div>
+
+</div>
+
+
+<div class="meterHeader">
+
+<span>DROWSINESS LEVEL</span>
+
+<strong id="drowsiness">
+0%
+</strong>
+
+</div>
+
+<div class="meter">
+
+<div id="drowsinessBar" class="meterFill"></div>
+
+</div>
+
+
+<div id="warningBox" class="warningBox hidden">
+
+<div style="font-size:28px">
+⚠️
+</div>
+
+<div>
+
+<strong>PLEASE STAY ALERT</strong>
+
+<div style="font-size:11px;margin-top:4px">
+Eyes have been closed for too long.
+</div>
+
+</div>
+
+</div>
+
+
+<div id="criticalBox" class="criticalBox hidden">
+
+<div style="font-size:30px">
+🚨
+</div>
+
+<div>
+
+<strong>WAKE UP!</strong>
+
+<div style="font-size:11px;margin-top:4px">
+Eyes closed for too long
+</div>
+
+</div>
+
+</div>
+
+
+</div>
+
+</section>
+
+
+
+<section class="card how">
+
+<div class="titleRow">
+
+<h3>⚙️ How it works</h3>
+
+<span style="font-size:10px;color:#4ff0ae">
+🔒 LOCAL PROCESSING
+</span>
+
+</div>
+
+
+<div class="steps">
+
+<div class="step">
+
+<div class="stepNumber">1</div>
+
+Start detection and allow camera.
+
+</div>
+
+<div class="step">
+
+<div class="stepNumber">2</div>
+
+Camera detects the face and eyes.
+
+</div>
+
+<div class="step">
+
+<div class="stepNumber">3</div>
+
+3 seconds closed → warning beep.
+
+</div>
+
+<div class="step">
+
+<div class="stepNumber">4</div>
+
+10 seconds closed → critical buzzer.
+
+</div>
+
+<div class="step">
+
+<div class="stepNumber">5</div>
+
+Open eyes → alarm automatically stops.
+
+</div>
+
+</div>
+
+
+<p style="color:#607991;font-size:11px;margin-top:15px">
+Camera data is processed locally in your browser.
+No camera recording is stored.
+</p>
+
+</section>
+
+
+<div id="errorBox" class="error"></div>
+
+
+</div>
+
+
+<footer>
+Smart Anti Sleep Box
+</footer>
+
+
+
+<!-- MEDIAPIPE FACE MESH -->
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+
+
+<script>
+
+
+/* ==========================================
+   SETTINGS
+========================================== */
+
+
+/*
+   IMPORTANT:
+   These values are easy to change.
+*/
+
+const EAR_THRESHOLD = 0.23;
+
+const EAR_OPEN_THRESHOLD = 0.255;
+
+const WARNING_TIME = 3;
+
+const CRITICAL_TIME = 10;
+
+const FACE_LOST_GRACE_PERIOD = 1.5;
+
+const WARNING_BEEP_INTERVAL = 2000;
+
+const CRITICAL_BEEP_INTERVAL = 700;
+
+const SPEECH_INTERVAL = 5000;
+
+
+/* ==========================================
+   ELEMENTS
+========================================== */
+
+const video =
+document.getElementById("video");
+
+const canvas =
+document.getElementById("canvas");
+
+const ctx =
+canvas.getContext("2d");
+
+
+const startBtn =
+document.getElementById("startBtn");
+
+const stopBtn =
+document.getElementById("stopBtn");
+
+const testBtn =
+document.getElementById("testBtn");
+
+
+const systemStatus =
+document.getElementById("systemStatus");
+
+const cameraPill =
+document.getElementById("cameraPill");
+
+const alarmPill =
+document.getElementById("alarmPill");
+
+const driverStatus =
+document.getElementById("driverStatus");
+
+const driverText =
+document.getElementById("driverText");
+
+
+const closedTime =
+document.getElementById("closedTime");
+
+const drowsiness =
+document.getElementById("drowsiness");
+
+const drowsinessBar =
+document.getElementById("drowsinessBar");
+
+
+const faceStatus =
+document.getElementById("faceStatus");
+
+const processingStatus =
+document.getElementById("processingStatus");
+
+
+const cameraStat =
+document.getElementById("cameraStat");
+
+const faceStat =
+document.getElementById("faceStat");
+
+const eyeStat =
+document.getElementById("eyeStat");
+
+const alarmStat =
+document.getElementById("alarmStat");
+
+
+const warningBox =
+document.getElementById("warningBox");
+
+const criticalBox =
+document.getElementById("criticalBox");
+
+const globalAlert =
+document.getElementById("globalAlert");
+
+const cameraMessage =
+document.getElementById("cameraMessage");
+
+const errorBox =
+document.getElementById("errorBox");
+
+
+const leftEyeBox =
+document.getElementById("leftEyeBox");
+
+const rightEyeBox =
+document.getElementById("rightEyeBox");
+
+const leftEyeText =
+document.getElementById("leftEyeText");
+
+const rightEyeText =
+document.getElementById("rightEyeText");
+
+const leftEyeIcon =
+document.getElementById("leftEyeIcon");
+
+const rightEyeIcon =
+document.getElementById("rightEyeIcon");
+
+
+/* ==========================================
+   VARIABLES
+========================================== */
+
+let stream = null;
+
+let running = false;
+
+let processing = false;
+
+let animationFrame = null;
+
+let faceMesh = null;
+
+let closedSince = null;
+
+let lastFaceSeen = 0;
+
+let lastEyeState = "OPEN";
+
+let earHistory = [];
+
+let warningInterval = null;
+
+let criticalInterval = null;
+
+let lastSpeech = 0;
+
+let audioContext = null;
+
+let masterGain = null;
+
+let testRunning = false;
+
+
+/* ==========================================
+   AUDIO
+========================================== */
+
+function initializeAudio(){
+
+try{
+
+if(!audioContext){
+
+audioContext =
+new(
+window.AudioContext ||
+window.webkitAudioContext
+)();
+
+masterGain =
+audioContext.createGain();
+
+masterGain.gain.value = 0.85;
+
+masterGain.connect(
+audioContext.destination
+);
+
+}
+
+if(
+audioContext.state === "suspended"
+){
+
+audioContext.resume();
+
+}
+
+}catch(error){
+
+console.log("Audio error:",error);
+
+}
+
+}
+
+
+function playTone(
+frequency,
+duration,
+volume,
+type="sine"
+){
+
+if(!audioContext)
+return;
+
+try{
+
+const oscillator =
+audioContext.createOscillator();
+
+const gain =
+audioContext.createGain();
+
+
+oscillator.type = type;
+
+oscillator.frequency.value =
+frequency;
+
+
+gain.gain.setValueAtTime(
+0.001,
+audioContext.currentTime
+);
+
+gain.gain.exponentialRampToValueAtTime(
+volume,
+audioContext.currentTime + 0.02
+);
+
+gain.gain.exponentialRampToValueAtTime(
+0.001,
+audioContext.currentTime + duration
+);
+
+
+oscillator.connect(gain);
+
+gain.connect(masterGain);
+
+
+oscillator.start();
+
+oscillator.stop(
+audioContext.currentTime +
+duration +
+0.04
+);
+
+}catch(error){
+
+console.log(error);
+
+}
+
+}
+
+
+/* SOFT WARNING */
+
+function warningBeep(){
+
+playTone(
+650,
+0.18,
+0.22,
+"sine"
+);
+
+}
+
+
+/* LOUD CRITICAL */
+
+function criticalBeep(){
+
+playTone(
+1050,
+0.25,
+0.48,
+"square"
+);
+
+setTimeout(()=>{
+
+if(running){
+
+playTone(
+700,
+0.20,
+0.42,
+"square"
+);
+
+}
+
+},280);
+
+}
+
+
+/* ==========================================
+   SPEECH
+========================================== */
+
+function speakAlert(){
+
+if(
+!("speechSynthesis" in window)
+)
+return;
+
+
+const now =
+Date.now();
+
+
+if(
+now-lastSpeech <
+SPEECH_INTERVAL
+)
+return;
+
+
+lastSpeech =
+now;
+
+
+speechSynthesis.cancel();
+
+
+const speech =
+new SpeechSynthesisUtterance(
+"Wake up! Driver alert!"
+);
+
+
+speech.rate = 1;
+
+speech.pitch = 1;
+
+speech.volume = 1;
+
+
+speechSynthesis.speak(
+speech
+);
+
+}
+
+
+/* ==========================================
+   DISTANCE
+========================================== */
+
+function distance(a,b){
+
+return Math.sqrt(
+Math.pow(a.x-b.x,2) +
+Math.pow(a.y-b.y,2)
+);
+
+}
+
+
+/* ==========================================
+   CORRECT EAR CALCULATION
+========================================== */
+
+
+/*
+   Eye points:
+
+   LEFT:
+   33  = outer
+   133 = inner
+   160/158 = upper
+   144/153 = lower
+
+   RIGHT:
+   362 = outer
+   263 = inner
+   385/387 = upper
+   380/373 = lower
+*/
+
+
+function calculateEyeEAR(
+points,
+outer,
+upper1,
+upper2,
+inner,
+lower1,
+lower2
+){
+
+const vertical1 =
+distance(
+points[upper1],
+points[lower1]
+);
+
+const vertical2 =
+distance(
+points[upper2],
+points[lower2]
+);
+
+const horizontal =
+distance(
+points[outer],
+points[inner]
+);
+
+
+if(horizontal === 0)
+return 1;
+
+
+return(
+vertical1 + vertical2
+) /
+(2 * horizontal);
+
+}
+
+
+/* ==========================================
+   SMOOTH EAR
+========================================== */
+
+function smoothEAR(value){
+
+earHistory.push(value);
+
+
+if(
+earHistory.length > 4
+){
+
+earHistory.shift();
+
+}
+
+
+let total=0;
+
+
+for(
+const v of earHistory
+){
+
+total += v;
+
+}
+
+
+return total /
+earHistory.length;
+
+}
+
+
+/* ==========================================
+   EYE UI
+========================================== */
+
+function setEyesOpen(){
+
+leftEyeBox.className =
+"eyeBox open";
+
+rightEyeBox.className =
+"eyeBox open";
+
+
+leftEyeIcon.textContent =
+"👁️";
+
+rightEyeIcon.textContent =
+"👁️";
+
+
+leftEyeText.textContent =
+"OPEN";
+
+rightEyeText.textContent =
+"OPEN";
+
+}
+
+
+function setEyesClosed(){
+
+leftEyeBox.className =
+"eyeBox closed";
+
+rightEyeBox.className =
+"eyeBox closed";
+
+
+leftEyeIcon.textContent =
+"😴";
+
+rightEyeIcon.textContent =
+"😴";
+
+
+leftEyeText.textContent =
+"CLOSED";
+
+rightEyeText.textContent =
+"CLOSED";
+
+}
+
+
+/* ==========================================
+   DRAW EYE LANDMARKS
+========================================== */
+
+function drawEyes(face){
+
+if(
+canvas.width !== video.videoWidth ||
+canvas.height !== video.videoHeight
+){
+
+canvas.width =
+video.videoWidth;
+
+canvas.height =
+video.videoHeight;
+
+}
+
+
+ctx.clearRect(
+0,
+0,
+canvas.width,
+canvas.height
+);
+
+
+/* Eye outlines */
+
+const leftEye = [
+33,160,158,133,153,144
+];
+
+const rightEye = [
+362,385,387,263,373,380
+];
+
+
+ctx.lineWidth = 3;
+
+
+/* LEFT */
+
+ctx.strokeStyle =
+"#4ce3a5";
+
+ctx.beginPath();
+
+
+leftEye.forEach(
+(index,i)=>{
+
+const p =
+face[index];
+
+if(i===0){
+
+ctx.moveTo(
+p.x*canvas.width,
+p.y*canvas.height
+);
+
+}else{
+
+ctx.lineTo(
+p.x*canvas.width,
+p.y*canvas.height
+);
+
+}
+
+}
+);
+
+
+ctx.closePath();
+
+ctx.stroke();
+
+
+/* RIGHT */
+
+ctx.strokeStyle =
+"#4ce3a5";
+
+ctx.beginPath();
+
+
+rightEye.forEach(
+(index,i)=>{
+
+const p =
+face[index];
+
+if(i===0){
+
+ctx.moveTo(
+p.x*canvas.width,
+p.y*canvas.height
+);
+
+}else{
+
+ctx.lineTo(
+p.x*canvas.width,
+p.y*canvas.height
+);
+
+}
+
+}
+);
+
+
+ctx.closePath();
+
+ctx.stroke();
+
+
+/* Landmark dots */
+
+ctx.fillStyle =
+"#ffffff";
+
+
+[
+33,160,158,133,153,144,
+362,385,387,263,373,380
+].forEach(
+index=>{
+
+const p =
+face[index];
+
+ctx.beginPath();
+
+ctx.arc(
+p.x*canvas.width,
+p.y*canvas.height,
+3,
+0,
+Math.PI*2
+);
+
+ctx.fill();
+
+}
+);
+
+}
+
+
+/* ==========================================
+   DROWSINESS
+========================================== */
+
+function updateDrowsiness(seconds){
+
+let value=0;
+
+
+if(
+seconds >= WARNING_TIME
+){
+
+value =
+30 +
+(
+(seconds-WARNING_TIME) /
+(CRITICAL_TIME-WARNING_TIME)
+)*70;
+
+}
+
+
+value =
+Math.min(
+100,
+Math.round(value)
+);
+
+
+drowsiness.textContent =
+value+"%";
+
+
+drowsinessBar.style.width =
+value+"%";
+
+
+if(value>=90){
+
+drowsinessBar.style.background =
+"#ff5c68";
+
+}else if(value>=30){
+
+drowsinessBar.style.background =
+"#ffbd4c";
+
+}else{
+
+drowsinessBar.style.background =
+"#43e1a5";
+
+}
+
+}
+
+
+/* ==========================================
+   STOP ALARMS
+========================================== */
+
+function stopAlarms(){
+
+if(warningInterval){
+
+clearInterval(
+warningInterval
+);
+
+warningInterval=null;
+
+}
+
+
+if(criticalInterval){
+
+clearInterval(
+criticalInterval
+);
+
+criticalInterval=null;
+
+}
+
+
+if(
+"speechSynthesis" in window
+){
+
+speechSynthesis.cancel();
+
+}
+
+
+alarmPill.textContent =
+"ALARM OFF";
+
+alarmPill.className =
+"pill";
+
+
+alarmStat.textContent =
+"OFF";
+
+}
+
+
+/* ==========================================
+   WARNING
+========================================== */
+
+function startWarning(){
+
+if(
+!warningInterval
+){
+
+warningBeep();
+
+
+warningInterval =
+setInterval(
+()=>{
+
+if(
+running &&
+lastEyeState === "CLOSED"
+){
+
+warningBeep();
+
+}
+
+},
+WARNING_BEEP_INTERVAL
+);
+
+}
+
+}
+
+
+/* ==========================================
+   CRITICAL
+========================================== */
+
+function startCritical(){
+
+if(
+!criticalInterval
+){
+
+criticalBeep();
+
+
+criticalInterval =
+setInterval(
+()=>{
+
+if(
+running &&
+lastEyeState === "CLOSED"
+){
+
+criticalBeep();
+
+}
+
+},
+CRITICAL_BEEP_INTERVAL
+);
+
+}
+
+
+speakAlert();
+
+}
+
+
+/* ==========================================
+   RESET WHEN EYES OPEN
+========================================== */
+
+function resetAfterOpen(){
+
+closedSince=null;
+
+lastEyeState="OPEN";
+
+earHistory=[];
+
+
+closedTime.textContent =
+"0.0 sec";
+
+
+drowsiness.textContent =
+"0%";
+
+
+drowsinessBar.style.width =
+"0%";
+
+
+drowsinessBar.style.background =
+"#43e1a5";
+
+
+stopAlarms();
+
+
+driverStatus.className =
+"driverStatus";
+
+
+driverText.textContent =
+"DRIVER ALERT";
+
+
+warningBox.classList.add(
+"hidden"
+);
+
+
+criticalBox.classList.add(
+"hidden"
+);
+
+
+globalAlert.style.display =
+"none";
+
+
+globalAlert.className =
+"alert";
+
+
+document.body.style.background =
+"#06111f";
+
+
+setEyesOpen();
+
+}
+
+
+/* ==========================================
+   EYES CLOSED PROCESS
+========================================== */
+
+function processClosedEyes(){
+
+lastEyeState =
+"CLOSED";
+
+
+if(
+!closedSince
+){
+
+closedSince =
+performance.now();
+
+}
+
+
+const seconds =
+(
+performance.now() -
+closedSince
+) / 1000;
+
+
+closedTime.textContent =
+seconds.toFixed(1)+" sec";
+
+
+updateDrowsiness(
+seconds
+);
+
+
+/* UNDER 3 SEC */
+
+if(
+seconds < WARNING_TIME
+){
+
+driverStatus.className =
+"driverStatus warning";
+
+
+driverText.textContent =
+"EYES CLOSED — MONITORING";
+
+
+alarmPill.textContent =
+"MONITORING";
+
+alarmPill.className =
+"pill yellow";
+
+
+alarmStat.textContent =
+"MONITORING";
+
+
+warningBox.classList.add(
+"hidden"
+);
+
+criticalBox.classList.add(
+"hidden"
+);
+
+return;
+
+}
+
+
+/* 3 TO 10 SEC */
+
+if(
+seconds < CRITICAL_TIME
+){
+
+driverStatus.className =
+"driverStatus warning";
+
+
+driverText.textContent =
+"⚠️ DROWSINESS WARNING";
+
+
+alarmPill.textContent =
+"WARNING";
+
+alarmPill.className =
+"pill yellow";
+
+
+alarmStat.textContent =
+"WARNING";
+
+
+warningBox.classList.remove(
+"hidden"
+);
+
+
+criticalBox.classList.add(
+"hidden"
+);
+
+
+globalAlert.textContent =
+"⚠️ Please stay alert";
+
+
+globalAlert.className =
+"alert warningAlert";
+
+
+globalAlert.style.display =
+"block";
+
+
+startWarning();
+
+
+return;
+
+}
+
+
+/* 10+ SEC */
+
+driverStatus.className =
+"driverStatus critical";
+
+
+driverText.textContent =
+"🚨 WAKE UP!";
+
+
+alarmPill.textContent =
+"CRITICAL";
+
+alarmPill.className =
+"pill red";
+
+
+alarmStat.textContent =
+"CRITICAL";
+
+
+warningBox.classList.add(
+"hidden"
+);
+
+
+criticalBox.classList.remove(
+"hidden"
+);
+
+
+globalAlert.textContent =
+"🚨 WAKE UP! — Eyes closed for too long";
+
+
+globalAlert.className =
+"alert criticalAlert";
+
+
+globalAlert.style.display =
+"block";
+
+
+document.body.style.background =
+"#26090d";
+
+
+startCritical();
+
+}
+
+
+/* ==========================================
+   FACE PROCESS
+========================================== */
+
+function processFace(face){
+
+lastFaceSeen =
+performance.now();
+
+
+faceStatus.textContent =
+"DETECTED";
+
+faceStat.textContent =
+"DETECTED";
+
+
+drawEyes(face);
+
+
+/* LEFT EAR */
+
+const leftEAR =
+calculateEyeEAR(
+face,
+33,
+160,
+158,
+133,
+144,
+153
+);
+
+
+/* RIGHT EAR */
+
+const rightEAR =
+calculateEyeEAR(
+face,
+362,
+385,
+387,
+263,
+380,
+373
+);
+
+
+const rawEAR =
+(leftEAR + rightEAR) / 2;
+
+
+const ear =
+smoothEAR(rawEAR);
+
+
+/*
+   HYSTERESIS:
+
+   CLOSED below 0.23
+   OPEN above 0.255
+
+   This prevents flickering.
+*/
+
+
+let eyesAreClosed;
+
+
+if(
+lastEyeState === "CLOSED"
+){
+
+eyesAreClosed =
+ear < EAR_OPEN_THRESHOLD;
+
+}else{
+
+eyesAreClosed =
+ear < EAR_THRESHOLD;
+
+}
+
+
+console.log(
+"EAR:",
+ear.toFixed(3),
+"Left:",
+leftEAR.toFixed(3),
+"Right:",
+rightEAR.toFixed(3),
+"Closed:",
+eyesAreClosed
+);
+
+
+if(
+eyesAreClosed
+){
+
+setEyesClosed();
+
+
+eyeStat.textContent =
+"CLOSED";
+
+
+processClosedEyes();
+
+}else{
+
+setEyesOpen();
+
+
+eyeStat.textContent =
+"OPEN";
+
+
+resetAfterOpen();
+
+}
+
+}
+
+
+/* ==========================================
+   NO FACE
+========================================== */
+
+function noFace(){
+
+ctx.clearRect(
+0,
+0,
+canvas.width,
+canvas.height
+);
+
+
+faceStatus.textContent =
+"NOT DETECTED";
+
+faceStat.textContent =
+"NOT DETECTED";
+
+
+const elapsed =
+performance.now() -
+lastFaceSeen;
+
+
+/*
+   Do not immediately reset.
+*/
+
+if(
+elapsed >
+FACE_LOST_GRACE_PERIOD*1000
+){
+
+if(
+!closedSince
+){
+
+eyeStat.textContent =
+"FACE NOT DETECTED";
+
+
+driverStatus.className =
+"driverStatus warning";
+
+driverText.textContent =
+"FACE NOT DETECTED";
+
+
+globalAlert.textContent =
+"Face not detected — please look at the camera";
+
+
+globalAlert.className =
+"alert warningAlert";
+
+
+globalAlert.style.display =
+"block";
+
+}
+
+}
+
+}
+
+
+/* ==========================================
+   START
+========================================== */
+
+async function startDetection(){
+
+if(running)
+return;
+
+
+errorBox.style.display =
+"none";
+
+
+initializeAudio();
+
+
+if(
+!navigator.mediaDevices ||
+!navigator.mediaDevices.getUserMedia
+){
+
+showError(
+"Camera is not supported by this browser."
+);
+
+return;
+
+}
+
+
+if(
+typeof FaceMesh === "undefined"
+){
+
+showError(
+"Face detection could not be loaded. Check your internet connection and refresh."
+);
+
+return;
+
+}
+
+
+try{
+
+
+stream =
+await navigator.mediaDevices.getUserMedia({
+
+video:{
+facingMode:"user",
+width:{
+ideal:1280
+},
+height:{
+ideal:720
+}
+},
+
+audio:false
+
+});
+
+
+video.srcObject =
+stream;
+
+
+await video.play();
+
+
+running=true;
+
+
+systemStatus.textContent =
+"● ACTIVE";
+
+systemStatus.className =
+"systemBadge active";
+
+
+cameraPill.textContent =
+"ACTIVE";
+
+cameraPill.className =
+"pill green";
+
+
+cameraStat.textContent =
+"ACTIVE";
+
+
+processingStatus.textContent =
+"RUNNING";
+
+
+cameraMessage.classList.add(
+"hidden"
+);
+
+
+startBtn.disabled=true;
+
+stopBtn.disabled=false;
+
+
+setEyesOpen();
+
+
+faceMesh =
+new FaceMesh({
+
+locateFile:
+file =>
+`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+
+});
+
+
+faceMesh.setOptions({
+
+maxNumFaces:1,
+
+refineLandmarks:true,
+
+minDetectionConfidence:0.55,
+
+minTrackingConfidence:0.55
+
+});
+
+
+faceMesh.onResults(
+results=>{
+
+if(!running)
+return;
+
+
+if(
+results.multiFaceLandmarks &&
+results.multiFaceLandmarks.length
+){
+
+processFace(
+results.multiFaceLandmarks[0]
+);
+
+}else{
+
+noFace();
+
+}
+
+}
+);
+
+
+lastFaceSeen =
+performance.now();
+
+
+runLoop();
+
+
+}catch(error){
+
+console.error(error);
+
+
+showError(
+"Camera permission is required. Please allow camera access and try again."
+);
+
+
+stopDetection();
+
+}
+
+}
+
+
+/* ==========================================
+   LOOP
+========================================== */
+
+async function runLoop(){
+
+if(!running)
+return;
+
+
+if(
+!processing &&
+video.readyState >= 2
+){
+
+processing=true;
+
+
+try{
+
+await faceMesh.send({
+image:video
+});
+
+}catch(error){
+
+console.error(
+"Detection error:",
+error
+);
+
+}
+
+
+processing=false;
+
+}
+
+
+animationFrame =
+requestAnimationFrame(
+runLoop
+);
+
+}
+
+
+/* ==========================================
+   STOP
+========================================== */
+
+function stopDetection(){
+
+running=false;
+
+processing=false;
+
+
+if(animationFrame){
+
+cancelAnimationFrame(
+animationFrame
+);
+
+animationFrame=null;
+
+}
+
+
+stopAlarms();
+
+
+if(stream){
+
+stream.getTracks().forEach(
+track=>track.stop()
+);
+
+stream=null;
+
+}
+
+
+video.srcObject=null;
+
+
+ctx.clearRect(
+0,
+0,
+canvas.width,
+canvas.height
+);
+
+
+cameraMessage.classList.remove(
+"hidden"
+);
+
+
+systemStatus.textContent =
+"● OFF";
+
+systemStatus.className =
+"systemBadge";
+
+
+cameraPill.textContent =
+"OFF";
+
+cameraPill.className =
+"pill";
+
+
+cameraStat.textContent =
+"OFF";
+
+
+processingStatus.textContent =
+"READY";
+
+
+startBtn.disabled=false;
+
+stopBtn.disabled=true;
+
+
+faceStatus.textContent =
+"NOT DETECTED";
+
+faceStat.textContent =
+"NOT DETECTED";
+
+
+resetAfterOpen();
+
+}
+
+
+/* ==========================================
+   TEST ALERT
+========================================== */
+
+function testAlert(){
+
+if(testRunning)
+return;
+
+
+initializeAudio();
+
+
+testRunning=true;
+
+testBtn.disabled=true;
+
+
+let second=0;
+
+
+globalAlert.textContent =
+"⚡ TEST ALERT — WARNING";
+
+
+globalAlert.className =
+"alert warningAlert";
+
+
+globalAlert.style.display =
+"block";
+
+
+driverStatus.className =
+"driverStatus warning";
+
+driverText.textContent =
+"⚠️ DROWSINESS WARNING";
+
+
+alarmPill.textContent =
+"WARNING";
+
+alarmPill.className =
+"pill yellow";
+
+
+alarmStat.textContent =
+"WARNING";
+
+
+warningBox.classList.remove(
+"hidden"
+);
+
+
+warningBeep();
+
+
+const timer =
+setInterval(()=>{
+
+second++;
+
+
+if(
+second < 4
+){
+
+warningBeep();
+
+}
+
+
+if(
+second >= 4 &&
+second < 8
+){
+
+globalAlert.textContent =
+"🚨 TEST ALERT — CRITICAL";
+
+
+globalAlert.className =
+"alert criticalAlert";
+
+
+driverStatus.className =
+"driverStatus critical";
+
+driverText.textContent =
+"🚨 WAKE UP!";
+
+
+alarmPill.textContent =
+"CRITICAL";
+
+alarmPill.className =
+"pill red";
+
+
+alarmStat.textContent =
+"CRITICAL";
+
+
+warningBox.classList.add(
+"hidden"
+);
+
+
+criticalBox.classList.remove(
+"hidden"
+);
+
+
+document.body.style.background =
+"#26090d";
+
+
+criticalBeep();
+
+speakAlert();
+
+}
+
+
+if(
+second >= 8
+){
+
+clearInterval(timer);
+
+
+testRunning=false;
+
+testBtn.disabled=false;
+
+
+stopAlarms();
+
+
+warningBox.classList.add(
+"hidden"
+);
+
+criticalBox.classList.add(
+"hidden"
+);
+
+
+globalAlert.style.display =
+"none";
+
+
+driverStatus.className =
+"driverStatus";
+
+driverText.textContent =
+"DRIVER ALERT";
+
+
+document.body.style.background =
+"#06111f";
+
+}
+
+},1000);
+
+}
+
+
+/* ==========================================
+   ERROR
+========================================== */
+
+function showError(message){
+
+errorBox.textContent =
+message;
+
+errorBox.style.display =
+"block";
+
+}
+
+
+/* ==========================================
+   BUTTONS
+========================================== */
+
+startBtn.addEventListener(
+"click",
+startDetection
+);
+
+stopBtn.addEventListener(
+"click",
+stopDetection
+);
+
+testBtn.addEventListener(
+"click",
+testAlert
+);
+
+
+/* ==========================================
+   CLEANUP
+========================================== */
+
+window.addEventListener(
+"beforeunload",
+()=>{
+
+if(stream){
+
+stream.getTracks().forEach(
+track=>track.stop()
+);
+
+}
+
+if(
+"speechSynthesis" in window
+){
+
+speechSynthesis.cancel();
+
+}
+
+});
+
+</script>
+
+</body>
+</html>
