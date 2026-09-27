@@ -550,6 +550,14 @@ footer{
     }
 }
 
+
+/* MOBILE CAMERA COMPATIBILITY */
+@media(max-width:600px){
+  .camera{aspect-ratio:3/4;min-height:320px}
+  video{object-fit:cover}
+  .cameraInfo{flex-direction:column;gap:6px}
+}
+
 </style>
 </head>
 
@@ -953,6 +961,14 @@ const EAR_THRESHOLD = 0.23;
 
 const EAR_OPEN_THRESHOLD = 0.255;
 
+// Adaptive calibration
+const CALIBRATION_FRAMES = 24;
+const CLOSED_RATIO = 0.70;
+const OPEN_RATIO = 0.82;
+let calibrationValues = [];
+let earBaseline = null;
+
+
 const WARNING_TIME = 3;
 
 const CRITICAL_TIME = 10;
@@ -1110,7 +1126,7 @@ let testRunning = false;
    AUDIO
 ========================================== */
 
-function initializeAudio(){
+async function initializeAudio(){
 
 try{
 
@@ -1137,7 +1153,7 @@ if(
 audioContext.state === "suspended"
 ){
 
-audioContext.resume();
+await audioContext.resume();
 
 }
 
@@ -1146,6 +1162,9 @@ audioContext.resume();
 console.log("Audio error:",error);
 
 }
+
+return !!audioContext &&
+       audioContext.state === "running";
 
 }
 
@@ -1818,6 +1837,8 @@ closedSince=null;
 lastEyeState="OPEN";
 
 earHistory=[];
+calibrationValues=[];
+earBaseline=null;
 
 
 closedTime.textContent =
@@ -2112,29 +2133,51 @@ smoothEAR(rawEAR);
 
 
 /*
-   HYSTERESIS:
-
-   CLOSED below 0.23
-   OPEN above 0.255
-
-   This prevents flickering.
+   ADAPTIVE EAR:
+   Different cameras/faces can produce different EAR values.
+   Calibrate briefly while the user is looking normally.
 */
 
+if(earBaseline === null){
+
+    if(ear > 0.18){
+        calibrationValues.push(rawEAR);
+    }
+
+    if(calibrationValues.length >= CALIBRATION_FRAMES){
+
+        const sorted = [...calibrationValues].sort((a,b)=>a-b);
+        const mid = Math.floor(sorted.length/2);
+
+        earBaseline =
+            sorted.length % 2
+            ? sorted[mid]
+            : (sorted[mid-1] + sorted[mid]) / 2;
+
+        processingStatus.textContent = "RUNNING";
+        earHistory = [];
+    }
+}
+
+const closedThreshold =
+    earBaseline !== null
+    ? Math.min(EAR_THRESHOLD, earBaseline * CLOSED_RATIO)
+    : EAR_THRESHOLD;
+
+const openThreshold =
+    earBaseline !== null
+    ? Math.min(EAR_OPEN_THRESHOLD, earBaseline * OPEN_RATIO)
+    : EAR_OPEN_THRESHOLD;
 
 let eyesAreClosed;
 
+if(lastEyeState === "CLOSED"){
 
-if(
-lastEyeState === "CLOSED"
-){
-
-eyesAreClosed =
-ear < EAR_OPEN_THRESHOLD;
+    eyesAreClosed = ear < openThreshold;
 
 }else{
 
-eyesAreClosed =
-ear < EAR_THRESHOLD;
+    eyesAreClosed = ear < closedThreshold;
 
 }
 
@@ -2146,6 +2189,8 @@ ear.toFixed(3),
 leftEAR.toFixed(3),
 "Right:",
 rightEAR.toFixed(3),
+"Baseline:",
+earBaseline ? earBaseline.toFixed(3) : "calibrating",
 "Closed:",
 eyesAreClosed
 );
@@ -2174,6 +2219,11 @@ eyeStat.textContent =
 
 
 resetAfterOpen();
+
+if(faceMesh){
+try{ faceMesh.close(); }catch(e){}
+faceMesh=null;
+}
 
 }
 
@@ -2257,21 +2307,21 @@ async function startDetection(){
 if(running)
 return;
 
+errorBox.style.display="none";
+await initializeAudio();
 
-errorBox.style.display =
-"none";
+/* Mobile Chrome requires a secure HTTPS context for camera access. */
+if(!window.isSecureContext){
+showError("Camera needs HTTPS. Open this website through an HTTPS link, not a file:// link.");
+return;
+}
 
-
-initializeAudio();
-
-
-if(
-!navigator.mediaDevices ||
+if(!navigator.mediaDevices ||
 !navigator.mediaDevices.getUserMedia
 ){
 
 showError(
-"Camera is not supported by this browser."
+"Camera is not supported. Please use the latest Chrome."
 );
 
 return;
@@ -2295,27 +2345,46 @@ return;
 try{
 
 
-stream =
-await navigator.mediaDevices.getUserMedia({
-
+const cameraOptions = [
+{
 video:{
-facingMode:"user",
-width:{
-ideal:1280
+facingMode:{ideal:"user"},
+width:{ideal:640,max:1280},
+height:{ideal:480,max:720}
 },
-height:{
-ideal:720
-}
-},
-
 audio:false
+},
+{
+video:{facingMode:"user"},
+audio:false
+},
+{
+video:true,
+audio:false
+}
+];
 
-});
+let cameraError=null;
+
+for(const constraints of cameraOptions){
+try{
+stream=await navigator.mediaDevices.getUserMedia(constraints);
+break;
+}catch(err){
+cameraError=err;
+console.log("Camera attempt failed:",err.name,err.message);
+}
+}
+
+if(!stream) throw cameraError || new Error("Camera unavailable");
 
 
-video.srcObject =
-stream;
+video.srcObject=stream;
 
+/* Required/important for mobile browsers. */
+video.setAttribute("autoplay","");
+video.setAttribute("muted","");
+video.setAttribute("playsinline","");
 
 await video.play();
 
@@ -2374,9 +2443,9 @@ maxNumFaces:1,
 
 refineLandmarks:true,
 
-minDetectionConfidence:0.55,
+minDetectionConfidence:0.5,
 
-minTrackingConfidence:0.55
+minTrackingConfidence:0.5
 
 });
 
@@ -2416,14 +2485,21 @@ runLoop();
 
 }catch(error){
 
-console.error(error);
+console.error("Camera error:",error);
 
+let message="Camera could not be started.";
 
-showError(
-"Camera permission is required. Please allow camera access and try again."
-);
+if(error && error.name==="NotAllowedError"){
+message="Camera permission was blocked. Chrome → site settings → Camera → Allow, then reload.";
+}else if(error && error.name==="NotFoundError"){
+message="No camera was found on this device.";
+}else if(error && error.name==="NotReadableError"){
+message="Camera is busy in another app. Close other camera/video apps and try again.";
+}else if(error && error.name==="SecurityError"){
+message="Camera blocked by browser security. Open the website through HTTPS.";
+}
 
-
+showError(message);
 stopDetection();
 
 }
@@ -2443,6 +2519,7 @@ return;
 
 if(
 !processing &&
+faceMesh &&
 video.readyState >= 2
 ){
 
@@ -2573,14 +2650,17 @@ resetAfterOpen();
    TEST ALERT
 ========================================== */
 
-function testAlert(){
+async function testAlert(){
 
 if(testRunning)
 return;
 
+await initializeAudio();
 
-initializeAudio();
-
+if(!audioContext || audioContext.state !== "running"){
+    showError("Tap TEST ALERT again to enable sound on this phone.");
+    return;
+}
 
 testRunning=true;
 
